@@ -1,0 +1,33 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local OS/editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Generated experiment outputs
+results/
+plots/
+
+# Model checkpoints and binary artifacts
+*.pt
+*.pth
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.matplotlib_cache/
+
+# Logs
+*.log
+
+docs/for_ECE

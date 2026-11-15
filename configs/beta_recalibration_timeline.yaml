@@ -1,0 +1,108 @@
+seed: 123
+
+simulator:
+  population: 100000
+  initial_exposed: 20
+  initial_infectious: 10
+  beta_base: 0.30
+  beta_surge: 0.65
+  sigma: 0.1923
+  gamma: 0.1429
+  episode_length: 160
+  surge_start: 45
+  surge_end: 75
+
+surrogate:
+  beta_hat: 0.30
+  sigma_hat: 0.1923
+  gamma_hat: 0.1429
+  fit_window: 7
+
+environment:
+  termination_mode: fixed_horizon
+  horizon: 160
+  max_steps: 160
+  extinction_threshold: 1
+  extinction_patience: 7
+  min_steps_before_extinction_check: 14
+  forecast_horizon: 7
+  recalibration_budget: 14
+  error_metric: mae
+  error_history_length: 14
+  state_features:
+    - normalized_compartments
+    - recent_errors
+    - rolling_mean_forecast_error
+    - rolling_error_trend
+    - remaining_budget
+    - days_since_recalibration
+
+recalibration:
+  method: oracle
+  noise_type: gaussian
+  noise_std: 0.05
+  clip_bounds: [0.01, 2.0]
+  beta_bounds: [0.01, 2.0]
+  fit_window: 7
+  grid_size: 64
+  min_pairs: 3
+  update_gain: 0.5
+  moving_average_window: 3
+  base_method: moment_match
+
+benchmark:
+  repetitions: 100
+  methods:
+    - oracle
+    - oracle_noisy
+    - moment_match
+    - grid_fit
+    - moving_average
+    - partial_update
+  beta_segments:
+    - {name: stable_initial, phase_type: stable, start: 0, end: 19, start_beta: 0.30, end_beta: 0.30}
+    - {name: slow_rise, phase_type: slow_change, start: 20, end: 49, start_beta: 0.30, end_beta: 0.60}
+    - {name: stable_high, phase_type: stable, start: 50, end: 64, start_beta: 0.60, end_beta: 0.60}
+    - {name: post_drop, phase_type: post_jump, start: 65, end: 84, start_beta: 0.25, end_beta: 0.25}
+    - {name: post_rise, phase_type: post_jump, start: 85, end: 104, start_beta: 0.70, end_beta: 0.70}
+    - {name: slow_decrease, phase_type: slow_change, start: 105, end: 134, start_beta: 0.70, end_beta: 0.35}
+    - {name: stable_final, phase_type: stable, start: 135, end: 159, start_beta: 0.35, end_beta: 0.35}
+  trigger_groups:
+    slow_rise: [27, 37, 47]
+    sudden_drop: [66, 68, 72, 79]
+    sudden_rise: [86, 88, 92, 99]
+    slow_decrease: [112, 122, 132]
+  jump_days:
+    sudden_drop: 65
+    sudden_rise: 85
+
+dqn:
+  episodes: 500
+  batch_size: 64
+  replay_capacity: 20000
+  gamma: 0.98
+  learning_rate: 0.001
+  hidden_dim: 64
+  min_replay_size: 500
+  target_update_interval: 200
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 8000
+
+policy_comparison:
+  output_dir: results/dqn_recalibration_comparison
+  recalibration_methods: [moving_average, grid_fit]
+  recalibration_budget: 6
+  training_seeds: [123, 456, 789]
+  training_episodes: 500
+  evaluation_episodes: 100
+  evaluation_seed: 10000
+  fixed_days: [40, 60, 80, 100, 120, 140]
+  error_threshold: 0.001
+  threshold_cooldown: 7
+  immediate_error_weight: 0.3
+  path_error_weight: 0.7
+
+outputs:
+  results_dir: results/beta_recalibration_timeline
+  figures_dir: results/beta_recalibration_timeline/figures

@@ -1,0 +1,11 @@
+# Core numerical stack
+# Developed with Python 3.12; Python 3.10+ is recommended.
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+
+# Config files
+PyYAML>=6.0
+
+# DQN implementation
+torch>=2.0

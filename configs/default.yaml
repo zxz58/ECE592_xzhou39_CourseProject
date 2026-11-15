@@ -1,0 +1,64 @@
+seed: 123
+
+simulator:
+  population: 100000
+  initial_exposed: 20
+  initial_infectious: 10
+  beta_base: 0.30
+  beta_surge: 0.65
+  sigma: 0.1923
+  gamma: 0.1429
+  episode_length: 120
+  surge_start: 45
+  surge_end: 75
+
+surrogate:
+  beta_hat: 0.30
+  sigma_hat: 0.1923
+  gamma_hat: 0.1429
+  fit_window: 14
+
+environment:
+  # Default branch behavior: one epidemic episode runs until extinction.
+  termination_mode: epidemic
+  horizon: 120
+  max_steps: 365
+  extinction_threshold: 1
+  extinction_patience: 7
+  min_steps_before_extinction_check: 14
+  forecast_horizon: 1
+  recalibration_budget: 8
+  error_metric: mae
+  # K for the raw error-history component of the default D_raw_mean_trend state.
+  error_history_length: 14
+  # Default state: D_raw_mean_trend with configurable K = error_history_length.
+  state_features:
+    - normalized_compartments
+    - recent_errors
+    - rolling_mean_forecast_error
+    - rolling_error_trend
+    - remaining_budget
+    - days_since_recalibration
+
+dqn:
+  episodes: 250
+  batch_size: 64
+  replay_capacity: 20000
+  gamma: 0.98
+  learning_rate: 0.001
+  hidden_dim: 64
+  min_replay_size: 500
+  target_update_interval: 200
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 8000
+
+evaluation:
+  episodes: 50
+  fixed_intervals: [7, 14, 21, 28]
+  thresholds: [0.001, 0.002, 0.003, 0.005]
+
+outputs:
+  results_dir: results
+  # Keep minimal-state figures separate from older runs.
+  figures_dir: results/figures_minimal_state
