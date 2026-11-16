@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Iterable
-
 import numpy as np
 
 
@@ -16,13 +14,11 @@ class DeterministicSEIRSurrogate:
         beta_hat: float = 0.30,
         sigma_hat: float = 1 / 5.2,
         gamma_hat: float = 1 / 7,
-        fit_window: int = 14,
     ) -> None:
         self.initial_beta_hat = float(beta_hat)
         self.beta_hat = float(beta_hat)
         self.sigma_hat = float(sigma_hat)
         self.gamma_hat = float(gamma_hat)
-        self.fit_window = int(fit_window)
         self._validate_parameters()
 
     def _validate_parameters(self) -> None:
@@ -32,41 +28,14 @@ class DeterministicSEIRSurrogate:
         for name, value in {"sigma_hat": self.sigma_hat, "gamma_hat": self.gamma_hat}.items():
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
-        if self.fit_window <= 0:
-            raise ValueError("fit_window must be positive")
 
     def reset(self) -> None:
         """Restore initial surrogate parameters."""
         self.beta_hat = self.initial_beta_hat
 
-    def fit(self, history: Iterable[dict[str, float]]) -> float:
-        """Estimate beta from recent state transitions by moment matching."""
-        states = list(history)[-self.fit_window - 1 :]
-        estimates: list[float] = []
-        for current, nxt in zip(states[:-1], states[1:]):
-            population = current["S"] + current["E"] + current["I"] + current["R"]
-            if current["S"] <= 0 or current["I"] <= 0:
-                continue
-            new_infectious = self.sigma_hat * current["E"]
-            new_exposed = nxt["E"] - current["E"] + new_infectious
-            exposure_rate = np.clip(new_exposed / current["S"], 1e-9, 0.999999)
-            beta = -np.log(1.0 - exposure_rate) * population / current["I"]
-            if np.isfinite(beta):
-                estimates.append(float(beta))
-        if estimates:
-            self.beta_hat = float(np.clip(np.mean(estimates), 0.01, 2.0))
-        return self.beta_hat
-
-    def recalibrate(
-        self,
-        true_beta: float | None = None,
-        history: Iterable[dict[str, float]] | None = None,
-    ) -> float:
-        """Update beta with oracle truth when available, otherwise fit history."""
-        if true_beta is not None:
-            self.beta_hat = float(true_beta)
-        elif history is not None:
-            self.fit(history)
+    def recalibrate(self, true_beta: float) -> float:
+        """Apply an oracle update using the current true beta."""
+        self.beta_hat = float(true_beta)
         return self.beta_hat
 
     def step_forecast(self, state: dict[str, float]) -> dict[str, float]:
